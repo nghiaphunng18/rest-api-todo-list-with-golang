@@ -18,6 +18,34 @@ go get gorm.io/driver/mysql
 - Create MySQL tables manually based on the models
 - Use gorm package to connect, read, and write data
 
+```bash
+docker run -d --name todo-app-db -p 3306:3306 -e MYSQL_ROOT_PASSWORD=my-password -e MYSQL_DATABASE=todo_db mysql:8.0
+```
+
+````bash
+use todo_db;
+CREATE TABLE IF NOT EXISTS users (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(255) NOT NULL UNIQUE,
+    password_hash VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS todos (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    description TEXT,
+    completed BOOLEAN NOT NULL DEFAULT false,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id)
+        REFERENCES users(id)
+        ON DELETE CASCADE
+) ENGINE=InnoDB;
+```
+
 3. User Handlers:
    - Implement the /register handler: hash the password with bcrypt, save the user to the DB.
    - Implement the /login handler: find the user, compare the password with bcrypt.CompareHashAndPassword, and if successful, generate and return a JWT.
@@ -42,4 +70,4 @@ go get gorm.io/driver/mysql
 
 ```bash
 go run ./cmd/api
-```
+````
