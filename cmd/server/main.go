@@ -6,6 +6,13 @@ import (
 	"net/http"
 	"todo-api/internal/config"
 	"todo-api/internal/database"
+	"todo-api/internal/handlers"
+	"todo-api/internal/repository"
+	"todo-api/internal/services"
+	"todo-api/internal/utils"
+
+	"github.com/go-chi/chi"
+	"github.com/go-chi/chi/middleware"
 )
 
 func main() {
@@ -16,19 +23,37 @@ func main() {
 	}
 	
 	// connect to database
-	_, err = database.InitDB(cfg)
+	db, err := database.InitDB(cfg)
 	if err != nil {
 		log.Fatalf("cannot connect to database: %v", err)
 	}
 	log.Println("Connected to database success")
 
+	// load config jwt
+	jwtConfig := config.LoadJWTConfig()
+	utils.SetJWTConfig(jwtConfig)
+
+	userStore := repository.NewUserStore(db)
+	authService := services.NewAuthService(userStore, cfg.JWTSecret)
+	authHandler := handlers.NewAuthHandler(authService)
+
+	// config route
+	r := chi.NewRouter()
+	r.Use(middleware.Logger)
+	
+	r.Group(func(r chi.Router) {
+        r.Get("/", func(w http.ResponseWriter, r *http.Request) {
+            fmt.Fprintf(w, "Todo App API v1")
+        })
+
+        // authentication endpoints
+        r.Post("/register", authHandler.Register)
+        r.Post("/login", authHandler.Login)
+    })
+
 	// run server
 	serverAddr := fmt.Sprintf(":%s", cfg.ServerPort)
 	fmt.Printf("Starting server on port %s\n", cfg.ServerPort)
 
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "Todo App")
-	})
-
-	log.Fatal(http.ListenAndServe(serverAddr, nil))
+	log.Fatal(http.ListenAndServe(serverAddr, r))
 }
