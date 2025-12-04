@@ -7,6 +7,7 @@ import (
 	"todo-api/internal/config"
 	"todo-api/internal/database"
 	"todo-api/internal/handlers"
+	appMiddleware "todo-api/internal/middleware"
 	"todo-api/internal/repository"
 	"todo-api/internal/services"
 	"todo-api/internal/utils"
@@ -41,6 +42,7 @@ func main() {
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
 	
+	// Public Routes
 	r.Group(func(r chi.Router) {
         r.Get("/", func(w http.ResponseWriter, r *http.Request) {
             fmt.Fprintf(w, "Todo App API v1")
@@ -49,6 +51,16 @@ func main() {
         // authentication endpoints
         r.Post("/register", authHandler.Register)
         r.Post("/login", authHandler.Login)
+    })
+
+	// Protected Routes
+	r.Group(func(r chi.Router) {
+        r.Use(appMiddleware.AuthMiddleware(cfg.JWTSecret)) 
+        
+        r.Get("/auth-test", func(w http.ResponseWriter, r *http.Request) {
+            userID := r.Context().Value(utils.UserIDKey)
+            fmt.Fprintf(w, "User ID: %v", userID)
+        })
     })
 
 	// run server
