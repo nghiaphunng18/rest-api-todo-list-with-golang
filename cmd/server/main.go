@@ -7,15 +7,10 @@ import (
 	"todo-api/internal/config"
 	"todo-api/internal/database"
 	"todo-api/internal/handlers"
-<<<<<<< ours
 	appMiddleware "todo-api/internal/middleware"
 	"todo-api/internal/repository"
 	"todo-api/internal/services"
 	"todo-api/internal/utils"
-=======
-	"todo-api/internal/repository"
-	"todo-api/internal/services"
->>>>>>> theirs
 
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
@@ -35,13 +30,10 @@ func main() {
 	}
 	log.Println("Connected to database success")
 
-<<<<<<< ours
 	// load config jwt
 	jwtConfig := config.LoadJWTConfig()
 	utils.SetJWTConfig(jwtConfig)
 
-=======
->>>>>>> theirs
 	userStore := repository.NewUserStore(db)
 	authService := services.NewAuthService(userStore, cfg.JWTSecret)
 	authHandler := handlers.NewAuthHandler(authService)
@@ -49,11 +41,8 @@ func main() {
 	// config route
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
-	
-<<<<<<< ours
+
 	// Public Routes
-=======
->>>>>>> theirs
 	r.Group(func(r chi.Router) {
         r.Get("/", func(w http.ResponseWriter, r *http.Request) {
             fmt.Fprintf(w, "Todo App API v1")
@@ -64,7 +53,6 @@ func main() {
         r.Post("/login", authHandler.Login)
     })
 
-<<<<<<< ours
 	// Protected Routes
 	r.Group(func(r chi.Router) {
         r.Use(appMiddleware.AuthMiddleware(cfg.JWTSecret)) 
@@ -75,15 +63,9 @@ func main() {
         })
     })
 
-=======
->>>>>>> theirs
 	// run server
 	serverAddr := fmt.Sprintf(":%s", cfg.ServerPort)
 	fmt.Printf("Starting server on port %s\n", cfg.ServerPort)
 
 	log.Fatal(http.ListenAndServe(serverAddr, r))
-<<<<<<< ours
 }
-=======
-}
->>>>>>> theirs
