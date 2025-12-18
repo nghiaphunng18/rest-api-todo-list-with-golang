@@ -38,6 +38,10 @@ func main() {
 	authService := services.NewAuthService(userStore, cfg.JWTSecret)
 	authHandler := handlers.NewAuthHandler(authService)
 
+	todoRepo := repository.NewTodoRepository(db) 
+    todoService := services.NewTodoService(todoRepo)
+    todoHandler := handlers.NewTodoHandler(todoService)
+
 	// config route
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
@@ -61,6 +65,8 @@ func main() {
             userID := r.Context().Value(utils.UserIDKey)
             fmt.Fprintf(w, "User ID: %v", userID)
         })
+
+		r.Get("/todos", todoHandler.GetTodos)
     })
 
 	// run server
