@@ -49,3 +49,11 @@ func (r *TodoRepository) GetTodosByUserID(userID uint, limit int, offset int) (*
 func (r *TodoRepository) CreateTodo(todo *models.Todo) error {
     return r.db.Create(todo).Error
 }
+
+func (r *TodoRepository) GetTodoByID(id uint, userID uint) (*models.Todo, error) {
+    var todo models.Todo
+    if err := r.db.Where("id = ? AND user_id = ?", id, userID).First(&todo).Error; err != nil {
+        return nil, err
+    }
+    return &todo, nil
+}

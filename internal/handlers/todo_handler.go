@@ -2,11 +2,14 @@ package handlers
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
 	"todo-api/internal/services"
 	"todo-api/internal/utils"
+
+	"github.com/go-chi/chi"
 )
 
 type TodoHandler struct {
@@ -105,4 +108,33 @@ func (h *TodoHandler) CreateTodo(w http.ResponseWriter, r *http.Request) {
     }
 
     utils.DTOResponse(w, http.StatusCreated, todo)
+}
+
+func (h *TodoHandler) GetTodoByID(w http.ResponseWriter, r *http.Request) {
+    // get user id from context
+    userID, err := getUserIDFromContext(r)
+    if err != nil {
+        utils.ErrorResponse(w, http.StatusUnauthorized, "Unauthorized")
+        return
+    }
+
+    // get todo id from URL
+    idStr := chi.URLParam(r, "id")
+    id, err := strconv.Atoi(idStr)
+    if err != nil || id <= 0 {
+        utils.ErrorResponse(w, http.StatusBadRequest, "Invalid Todo ID")
+        return
+    }
+
+    todo, err := h.todoService.GetTodoByID(uint(id), userID)
+    if err != nil {
+        if errors.Is(err, services.ErrTodoNotFound) {
+            utils.ErrorResponse(w, http.StatusNotFound, "Todo not found")
+        } else {
+            utils.ErrorResponse(w, http.StatusInternalServerError, "Failed to retrieve todo")
+        }
+        return
+    }
+
+    utils.DTOResponse(w, http.StatusOK, todo)
 }

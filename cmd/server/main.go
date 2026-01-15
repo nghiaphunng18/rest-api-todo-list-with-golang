@@ -69,6 +69,7 @@ func main() {
 		r.Route("/todos", func(r chi.Router) {
             r.Get("/", todoHandler.GetTodos)
             r.Post("/", todoHandler.CreateTodo)
+			r.Get("/{id}", todoHandler.GetTodoByID)
         })
     })
 

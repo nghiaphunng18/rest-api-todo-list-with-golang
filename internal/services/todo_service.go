@@ -1,9 +1,14 @@
 package services
 
 import (
+	"errors"
 	"todo-api/internal/models"
 	"todo-api/internal/repository"
+
+	"gorm.io/gorm"
 )
+
+var ErrTodoNotFound = errors.New("todo not found")
 
 type TodoService struct {
     todoRepo *repository.TodoRepository
@@ -36,5 +41,16 @@ func (s *TodoService) CreateTodo(userID uint, title string, description string) 
         return nil, err
     }
 
+    return todo, nil
+}
+
+func (s *TodoService) GetTodoByID(id uint, userID uint) (*models.Todo, error) {
+    todo, err := s.todoRepo.GetTodoByID(id, userID)
+    if err != nil {
+        if errors.Is(err, gorm.ErrRecordNotFound) {
+            return nil, ErrTodoNotFound
+        }
+        return nil, err
+    }
     return todo, nil
 }
