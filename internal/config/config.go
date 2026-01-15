@@ -3,6 +3,8 @@ package config
 import (
 	"fmt"
 	"os"
+	"strconv"
+	"time"
 
 	"github.com/joho/godotenv"
 )
@@ -10,11 +12,17 @@ import (
 type Config struct {
 	ServerPort string
 	
+	JWTSecret string
+
 	DBUser     string
 	DBPassword string
 	DBHost     string
 	DBPort     string
 	DBName     string
+}
+
+type JWTConfig struct {
+	Expiration time.Duration
 }
 
 func LoadConfig() (*Config, error) {
@@ -25,7 +33,8 @@ func LoadConfig() (*Config, error) {
 
 	cfg := &Config{
 		ServerPort: os.Getenv("SERVER_PORT"),
-		
+		// auth
+		JWTSecret: os.Getenv("JWT_SECRET"),
 		// connect to database
 		DBUser:     os.Getenv("DB_USER"),
 		DBPassword: os.Getenv("DB_PASSWORD"),
@@ -40,4 +49,18 @@ func LoadConfig() (*Config, error) {
     }
 
 	return cfg, nil
+}
+
+func LoadJWTConfig() JWTConfig {
+	expiration := time.Hour
+
+	if v := os.Getenv("JWT_EXPIRATION_HOURS"); v != "" {
+		if hours, err := strconv.Atoi(v); err == nil && hours > 0 {
+			expiration = time.Duration(hours) * time.Hour
+		}
+	}
+
+	return JWTConfig{
+		Expiration: expiration,
+	}
 }
