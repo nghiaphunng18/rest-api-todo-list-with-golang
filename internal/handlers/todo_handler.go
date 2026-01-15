@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -10,6 +11,11 @@ import (
 
 type TodoHandler struct {
     todoService *services.TodoService
+}
+
+type CreateTodoRequest struct {
+    Title       string `json:"title"`
+    Description string `json:"description"`
 }
 
 func NewTodoHandler(todoService *services.TodoService) *TodoHandler {
@@ -70,4 +76,33 @@ func (h *TodoHandler) GetTodos(w http.ResponseWriter, r *http.Request) {
     }
 
     utils.DTOResponse(w, http.StatusOK, response)
+}
+
+func (h *TodoHandler) CreateTodo(w http.ResponseWriter, r *http.Request) {
+    // get user id from context
+    userID, err := getUserIDFromContext(r)
+    if err != nil {
+        utils.ErrorResponse(w, http.StatusUnauthorized, "Unauthorized")
+        return
+    }
+
+    var req CreateTodoRequest
+    if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+        utils.ErrorResponse(w, http.StatusBadRequest, "Invalid request body")
+        return
+    }
+
+    // validate
+    if req.Title == "" {
+        utils.ErrorResponse(w, http.StatusBadRequest, "Title is required")
+        return
+    }
+
+    todo, err := h.todoService.CreateTodo(userID, req.Title, req.Description)
+    if err != nil {
+        utils.ErrorResponse(w, http.StatusInternalServerError, "Failed to create todo")
+        return
+    }
+
+    utils.DTOResponse(w, http.StatusCreated, todo)
 }

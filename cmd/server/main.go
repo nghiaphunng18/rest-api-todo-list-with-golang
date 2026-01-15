@@ -66,7 +66,10 @@ func main() {
             fmt.Fprintf(w, "User ID: %v", userID)
         })
 
-		r.Get("/todos", todoHandler.GetTodos)
+		r.Route("/todos", func(r chi.Router) {
+            r.Get("/", todoHandler.GetTodos)
+            r.Post("/", todoHandler.CreateTodo)
+        })
     })
 
 	// run server

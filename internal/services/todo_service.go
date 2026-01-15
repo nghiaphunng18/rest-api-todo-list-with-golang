@@ -1,6 +1,7 @@
 package services
 
 import (
+	"todo-api/internal/models"
 	"todo-api/internal/repository"
 )
 
@@ -21,4 +22,19 @@ func (s *TodoService) GetTodos(userID uint, limit int, page int) (*repository.Pa
     }
     
     return s.todoRepo.GetTodosByUserID(userID, limit, offset)
+}
+
+func (s *TodoService) CreateTodo(userID uint, title string, description string) (*models.Todo, error) {
+    todo := &models.Todo{
+        UserID:      userID,
+        Title:       title,
+        Description: description,
+        Completed:   false,
+    }
+
+    if err := s.todoRepo.CreateTodo(todo); err != nil {
+        return nil, err
+    }
+
+    return todo, nil
 }

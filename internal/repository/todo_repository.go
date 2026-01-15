@@ -45,3 +45,7 @@ func (r *TodoRepository) GetTodosByUserID(userID uint, limit int, offset int) (*
         TotalCount: int(totalCount), 
     }, nil
 }
+
+func (r *TodoRepository) CreateTodo(todo *models.Todo) error {
+    return r.db.Create(todo).Error
+}
