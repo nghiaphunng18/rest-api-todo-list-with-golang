@@ -21,6 +21,12 @@ type CreateTodoRequest struct {
     Description string `json:"description"`
 }
 
+type UpdateTodoRequest struct {
+    Title       *string `json:"title"`
+    Description *string `json:"description"`
+    Completed   *bool   `json:"completed"`
+}
+
 func NewTodoHandler(todoService *services.TodoService) *TodoHandler {
     return &TodoHandler{todoService: todoService}
 }
@@ -137,4 +143,45 @@ func (h *TodoHandler) GetTodoByID(w http.ResponseWriter, r *http.Request) {
     }
 
     utils.DTOResponse(w, http.StatusOK, todo)
+}
+
+func (h *TodoHandler) UpdateTodo(w http.ResponseWriter, r *http.Request) {
+    // get user id from context
+    userID, err := getUserIDFromContext(r)
+    if err != nil {
+        utils.ErrorResponse(w, http.StatusUnauthorized, "Unauthorized")
+        return
+    }
+
+    // get id from URL
+    idStr := chi.URLParam(r, "id")
+    id, err := strconv.Atoi(idStr)
+    if err != nil || id <= 0 {
+        utils.ErrorResponse(w, http.StatusBadRequest, "Invalid Todo ID")
+        return
+    }
+
+    var req UpdateTodoRequest
+    if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+        utils.ErrorResponse(w, http.StatusBadRequest, "Invalid request body")
+        return
+    }
+
+    // validate
+    if req.Title != nil && *req.Title == "" {
+        utils.ErrorResponse(w, http.StatusBadRequest, "Title cannot be empty")
+        return
+    }
+
+    updatedTodo, err := h.todoService.UpdateTodo(userID, uint(id), req.Title, req.Description, req.Completed)
+    if err != nil {
+        if errors.Is(err, services.ErrTodoNotFound) {
+            utils.ErrorResponse(w, http.StatusNotFound, "Todo not found")
+        } else {
+            utils.ErrorResponse(w, http.StatusInternalServerError, "Failed to update todo")
+        }
+        return
+    }
+
+    utils.DTOResponse(w, http.StatusOK, updatedTodo)
 }

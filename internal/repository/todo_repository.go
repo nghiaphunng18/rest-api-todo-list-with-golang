@@ -57,3 +57,7 @@ func (r *TodoRepository) GetTodoByID(id uint, userID uint) (*models.Todo, error)
     }
     return &todo, nil
 }
+
+func (r *TodoRepository) UpdateTodo(todo *models.Todo) error {
+    return r.db.Save(todo).Error
+}

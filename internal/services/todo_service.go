@@ -54,3 +54,28 @@ func (s *TodoService) GetTodoByID(id uint, userID uint) (*models.Todo, error) {
     }
     return todo, nil
 }
+
+func (s *TodoService) UpdateTodo(userID uint, todoID uint, title *string, description *string, completed *bool) (*models.Todo, error) {
+    // get todo by id
+    todo, err := s.GetTodoByID(todoID, userID)
+    if err != nil {
+        return nil, err
+    }
+
+    // update if field is not nil
+    if title != nil {
+        todo.Title = *title
+    }
+    if description != nil {
+        todo.Description = *description
+    }
+    if completed != nil {
+        todo.Completed = *completed
+    }
+
+    if err := s.todoRepo.UpdateTodo(todo); err != nil {
+        return nil, err
+    }
+
+    return todo, nil
+}

@@ -70,6 +70,7 @@ func main() {
             r.Get("/", todoHandler.GetTodos)
             r.Post("/", todoHandler.CreateTodo)
 			r.Get("/{id}", todoHandler.GetTodoByID)
+			r.Put("/{id}", todoHandler.UpdateTodo)
         })
     })
 
