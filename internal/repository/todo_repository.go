@@ -61,3 +61,17 @@ func (r *TodoRepository) GetTodoByID(id uint, userID uint) (*models.Todo, error)
 func (r *TodoRepository) UpdateTodo(todo *models.Todo) error {
     return r.db.Save(todo).Error
 }
+
+func (r *TodoRepository) DeleteTodo(id uint, userID uint) error {
+    result := r.db.Where("id = ? AND user_id = ?", id, userID).Delete(&models.Todo{})
+    
+    if result.Error != nil {
+        return result.Error
+    }
+
+    if result.RowsAffected == 0 {
+        return gorm.ErrRecordNotFound
+    }
+
+    return nil
+}

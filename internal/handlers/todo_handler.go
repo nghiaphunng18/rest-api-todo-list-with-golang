@@ -185,3 +185,33 @@ func (h *TodoHandler) UpdateTodo(w http.ResponseWriter, r *http.Request) {
 
     utils.DTOResponse(w, http.StatusOK, updatedTodo)
 }
+
+func (h *TodoHandler) DeleteTodo(w http.ResponseWriter, r *http.Request) {
+    // get user id from context
+    userID, err := getUserIDFromContext(r)
+    if err != nil {
+        utils.ErrorResponse(w, http.StatusUnauthorized, "Unauthorized")
+        return
+    }
+
+    // get todo id from URL
+    idStr := chi.URLParam(r, "id")
+    id, err := strconv.Atoi(idStr)
+    if err != nil || id <= 0 {
+        utils.ErrorResponse(w, http.StatusBadRequest, "Invalid Todo ID")
+        return
+    }
+
+    err = h.todoService.DeleteTodo(userID, uint(id))
+    
+    if err != nil {
+        if errors.Is(err, services.ErrTodoNotFound) {
+            utils.ErrorResponse(w, http.StatusNotFound, "Todo not found")
+        } else {
+            utils.ErrorResponse(w, http.StatusInternalServerError, "Failed to delete todo")
+        }
+        return
+    }
+
+    w.WriteHeader(http.StatusNoContent)
+}

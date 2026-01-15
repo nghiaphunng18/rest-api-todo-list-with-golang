@@ -79,3 +79,14 @@ func (s *TodoService) UpdateTodo(userID uint, todoID uint, title *string, descri
 
     return todo, nil
 }
+
+func (s *TodoService) DeleteTodo(userID uint, todoID uint) error {
+    err := s.todoRepo.DeleteTodo(todoID, userID)
+    if err != nil {
+        if errors.Is(err, gorm.ErrRecordNotFound) {
+            return ErrTodoNotFound
+        }
+        return err
+    }
+    return nil
+}
