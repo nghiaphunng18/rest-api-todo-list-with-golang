@@ -34,17 +34,18 @@ func main() {
 	jwtConfig := config.LoadJWTConfig()
 	utils.SetJWTConfig(jwtConfig)
 
-	userStore := repository.NewUserStore(db)
-	authService := services.NewAuthService(userStore, cfg.JWTSecret)
+	userRepo := repository.NewUserRepository(db)
+	authService := services.NewAuthService(userRepo, cfg.JWTSecret)
 	authHandler := handlers.NewAuthHandler(authService)
 
 	todoRepo := repository.NewTodoRepository(db) 
-    todoService := services.NewTodoService(todoRepo)
-    todoHandler := handlers.NewTodoHandler(todoService)
+	todoService := services.NewTodoService(todoRepo)
+	todoHandler := handlers.NewTodoHandler(todoService)
 
 	// config route
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
+	r.Use(middleware.Recoverer)
 
 	// Public Routes
 	r.Group(func(r chi.Router) {
@@ -60,11 +61,6 @@ func main() {
 	// Protected Routes
 	r.Group(func(r chi.Router) {
         r.Use(appMiddleware.AuthMiddleware(cfg.JWTSecret)) 
-        
-        r.Get("/auth-test", func(w http.ResponseWriter, r *http.Request) {
-            userID := r.Context().Value(utils.UserIDKey)
-            fmt.Fprintf(w, "User ID: %v", userID)
-        })
 
 		r.Route("/todos", func(r chi.Router) {
             r.Get("/", todoHandler.GetTodos)

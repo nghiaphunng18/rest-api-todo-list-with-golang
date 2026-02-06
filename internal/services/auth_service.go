@@ -2,6 +2,7 @@ package services
 
 import (
 	"errors"
+	"todo-api/internal/domain"
 	"todo-api/internal/models"
 	"todo-api/internal/repository"
 	"todo-api/internal/utils"
@@ -10,58 +11,57 @@ import (
 	"gorm.io/gorm"
 )
 
-var ErrUsernameExists = errors.New("username already exists")
-
-type AuthService struct {
-    userStore *repository.UserStore
-    jwtSecret string
+type IAuthService interface {
+	Register(username, password string) error
+	Login(username, password string) (string, error)
 }
 
-func NewAuthService(userStore *repository.UserStore, jwtSecret string) *AuthService {
-    return &AuthService{
-        userStore: userStore,
-        jwtSecret: jwtSecret,
-    }
+type AuthService struct {
+	userRepo  repository.IUserRepository
+	jwtSecret string
+}
+
+func NewAuthService(userRepo repository.IUserRepository, jwtSecret string) IAuthService {
+	return &AuthService{
+		userRepo:  userRepo,
+		jwtSecret: jwtSecret,
+	}
 }
 
 func (s *AuthService) Register(username, password string) error {
-	_, err := s.userStore.GetUserByUsername(username)
+	_, err := s.userRepo.GetUserByUsername(username)
 	if err == nil {
-		return ErrUsernameExists
+		return domain.ErrUserExists
 	}
-    if !errors.Is(err, gorm.ErrRecordNotFound) {
-        return err
-    }
+	if !errors.Is(err, gorm.ErrRecordNotFound) {
+		return domain.ErrInternalServer
+	}
+
 	hashed, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
-    if err != nil {
-        return err
-    }
+	if err != nil {
+		return domain.ErrInternalServer
+	}
 
-    user := &models.User{
-        Username: username,
-        PasswordHash: string(hashed),
-    }
+	user := &models.User{
+		Username:     username,
+		PasswordHash: string(hashed),
+	}
 
-    return s.userStore.CreateUser(user)
+	return s.userRepo.CreateUser(user)
 }
 
 func (s *AuthService) Login(username, password string) (string, error) {
-    user, err := s.userStore.GetUserByUsername(username)
-    if err != nil {
-        if errors.Is(err, gorm.ErrRecordNotFound) {
-            return "", errors.New("invalid credentials")
-        }
-        return "", err
-    }
+    user, err := s.userRepo.GetUserByUsername(username)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return "", domain.ErrBadCredentials
+		}
+		return "", domain.ErrInternalServer
+	}
 
-    if bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(password)) != nil {
-        return "", errors.New("invalid credentials")
-    }
+	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(password)); err != nil {
+		return "", domain.ErrBadCredentials
+	}
 
-    token, err := utils.GenerateJWT(user.ID, s.jwtSecret)
-    if err != nil {
-        return "", err
-    }
-
-    return token, nil
+	return utils.GenerateJWT(user.ID, s.jwtSecret)
 }

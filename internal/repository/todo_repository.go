@@ -7,71 +7,56 @@ import (
 )
 
 type PaginatedTodos struct {
-    Todos      []models.Todo
-    TotalCount int 
+	Todos      []models.Todo
+	TotalCount int
+}
+
+type ITodoRepository interface {
+	GetTodosByUserID(userID uint, limit int, offset int) (*PaginatedTodos, error)
+	CreateTodo(todo *models.Todo) error
+	GetTodoByID(id uint, userID uint) (*models.Todo, error)
+	UpdateTodo(todo *models.Todo) error
+	DeleteTodo(id uint, userID uint) error
 }
 
 type TodoRepository struct {
-    db *gorm.DB
+	db *gorm.DB
 }
 
-func NewTodoRepository(db *gorm.DB) *TodoRepository {
-    return &TodoRepository{db: db}
+func NewTodoRepository(db *gorm.DB) ITodoRepository {
+	return &TodoRepository{db: db}
 }
 
 func (r *TodoRepository) GetTodosByUserID(userID uint, limit int, offset int) (*PaginatedTodos, error) {
-    var todos []models.Todo
-    var totalCount int64 
+	var todos []models.Todo
+	var totalCount int64
 
-    if err := r.db.Model(&models.Todo{}).
-                   Where("user_id = ?", userID).
-                   Count(&totalCount).Error; err != nil {
-        return nil, err
-    }
+	if err := r.db.Model(&models.Todo{}).Where("user_id = ?", userID).Count(&totalCount).Error; err != nil {
+		return nil, err
+	}
 
-    
-    err := r.db.Where("user_id = ?", userID).
-              Limit(limit).
-              Offset(offset).
-              Order("created_at DESC").
-              Find(&todos).Error
+	err := r.db.Where("user_id = ?", userID).
+		Limit(limit).Offset(offset).
+		Order("created_at DESC").
+		Find(&todos).Error
 
-    if err != nil {
-        return nil, err
-    }
-
-    return &PaginatedTodos{
-        Todos:      todos,
-        TotalCount: int(totalCount), 
-    }, nil
+	return &PaginatedTodos{Todos: todos, TotalCount: int(totalCount)}, err
 }
 
 func (r *TodoRepository) CreateTodo(todo *models.Todo) error {
-    return r.db.Create(todo).Error
+	return r.db.Create(todo).Error
 }
 
 func (r *TodoRepository) GetTodoByID(id uint, userID uint) (*models.Todo, error) {
-    var todo models.Todo
-    if err := r.db.Where("id = ? AND user_id = ?", id, userID).First(&todo).Error; err != nil {
-        return nil, err
-    }
-    return &todo, nil
+	var todo models.Todo
+	err := r.db.Where("id = ? AND user_id = ?", id, userID).First(&todo).Error
+	return &todo, err
 }
 
 func (r *TodoRepository) UpdateTodo(todo *models.Todo) error {
-    return r.db.Save(todo).Error
+	return r.db.Save(todo).Error
 }
 
 func (r *TodoRepository) DeleteTodo(id uint, userID uint) error {
-    result := r.db.Where("id = ? AND user_id = ?", id, userID).Delete(&models.Todo{})
-    
-    if result.Error != nil {
-        return result.Error
-    }
-
-    if result.RowsAffected == 0 {
-        return gorm.ErrRecordNotFound
-    }
-
-    return nil
+	return r.db.Where("id = ? AND user_id = ?", id, userID).Delete(&models.Todo{}).Error
 }
