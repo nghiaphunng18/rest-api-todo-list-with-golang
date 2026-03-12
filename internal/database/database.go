@@ -3,6 +3,7 @@ package database
 import (
 	"fmt"
 	"todo-api/internal/config"
+	"todo-api/internal/models"
 
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -19,6 +20,11 @@ func InitDB(cfg *config.Config) (*gorm.DB, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to database: %w", err)
 	}
+	
+	err = db.AutoMigrate(&models.User{}, &models.Todo{}) 
+    if err != nil {
+        return nil, fmt.Errorf("failed to migrate database: %w", err)
+    }
 	
 	return db, nil
 }

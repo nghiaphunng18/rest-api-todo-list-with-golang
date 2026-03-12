@@ -45,7 +45,7 @@ func main() {
 	// config route
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
-	r.Use(middleware.Recoverer)
+	r.Use(middleware.Recoverer) // recover from panics without crashing server
 
 	// Public Routes
 	r.Group(func(r chi.Router) {

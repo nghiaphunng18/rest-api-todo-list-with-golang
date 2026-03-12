@@ -1,0 +1,30 @@
+services:
+  db:
+    image: mysql:8.0
+    container_name: todo-api-db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: todo_db
+      MYSQL_USER: user_todo
+      MYSQL_PASSWORD: user_password
+    ports:
+      - "3309:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+  app:
+    build: .
+    container_name: todo-api-app
+    restart: always
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db
+    env_file:
+      - .env.production
+    environment:
+      - DB_HOST=db
+
+volumes:
+  mysql_data:
